@@ -26,7 +26,7 @@ async function convertWord(w) {
   for (let s of ex) {
     result = result.replace('□',s)
   }
-  alert(result);
+  document.write(result)
 }
 
 function onLoad() {
