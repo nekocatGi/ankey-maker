@@ -8,8 +8,8 @@ let data,
 
 async function convertWord(w) {
   let word = w;
-  let ex = word.match(/[0-9ア-ンa-zA-Z#$%&~|@+-]/g)
-  word = word.replace(/[0-9ア-ンa-zA-Z#$%&~|@+-]/g,'□')
+  let ex = word.match(/[0-9ア-ンa-zA-Z#$%&~|@+-＃＄％＆]/g)
+  word = word.replace(/[0-9ア-ンa-zA-Z#$%&~|@+-＃＄％＆]/g,'□')
              .replace(/\s+/g,'◇');
   let outputType = 'hiragana';
   let apiUrl = 'https://labs.goo.ne.jp/api/hiragana';
@@ -48,7 +48,7 @@ function downLoad() {
   data = header;
   convertWord(word).then(function (value) {
     if(document.getElementById('chk1').checked) {
-      value = value.replace(/[!"#$%&'()=~|`{}+*<>?_！”＃＄％＆’（）＝～｜‘｛＋＊｝＜＞？＿＠＾；：、。・￥@;:,.-^]/g, '')
+      value = value.replace(/[！？、。!?]/g, '')
     }
     if(document.getElementById('chk2').checked) {
       value = value.toLowerCase()
