@@ -1,0 +1,47 @@
+body {
+  text-align: center;
+  background-color: #f2f2f5;
+}
+
+h1 {
+  color: #f16618;
+}
+
+button {
+  color: white;
+  background-color: #f16618;
+  border-style: solid;
+  border-color: #f16618;
+  border-width: 5px;
+  border-radius: 5px;
+  font-family: Ubuntu, sans-serif;
+}
+
+button:hover {
+  color: darkred;
+}
+
+button[disabled] {
+  background-color: #d1d1d1;
+  border-color: #d1d1d1;
+  pointer-events: none;
+}
+
+fieldset {
+  width: 400px;
+  margin: auto;
+}
+
+img {
+  border: solid 2px #777777;
+}
+
+.red {
+  background-color: red;
+  border-color: red;
+}
+
+#input {
+  width: 680px;
+  height: 240px;
+}
