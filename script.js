@@ -1,21 +1,33 @@
-//誤タップでページ消えるのを防止
+// 誤タップでページ消えるのを防止
 window.addEventListener("beforeunload", function(event) {
   event.returnValue = null;
 });
 
-let data,
-    dbtn = document.getElementById('download');
+const texterea = document.getElementById('input'),
+      dbtn = document.getElementById('download');
 
-async function convertWord(w) {
+//バイト数計算
+String.prototype.bytes = function () {
+  var length = 0;
+  for (var i = 0; i < this.length; i++) {
+    var c = this.charCodeAt(i);
+    if ((c >= 0x0 && c < 0x81) || (c === 0xf8f0) || (c >= 0xff61 && c < 0xffa0) || (c >= 0xf8f1 && c < 0xf8f4)) {
+      length += 1;
+    } else {
+      length += 2;
+    }
+  }
+  return length;
+};
+
+async function convertWord(w) {// ひらがなに変換
   let word = w;
-  let ex = word.match(/[0-9ア-ンa-zA-Z#$%&~|@＃＄％＆+-]/g)
-  word = word.replace(/[0-9ア-ンa-zA-Z#$%&~|@＃＄％＆+-]/g,'□')
-             .replace(/\s+/g,'◇');
+  let ex = word.match(/[0-9ア-ンa-zA-Z#$%&~|@＃＄％＆＋+-]/g)
+  word = word.replace(/[0-9ア-ンa-zA-Z#$%&~|@＃＄％＆＋+-]/g,'□')// 無視したい文字を変換
+             .replace(/\s+/g,'◇');// 残したい空白文字を変換
   let outputType = 'hiragana';
   let apiUrl = 'https://labs.goo.ne.jp/api/hiragana';
   let appId = 'e344179b84a4d45d20047575a2cf40eec359e8ad7f24e23eaa0acca2777c79c7'
-  //'e344179b84a4d45d20047575a2cf40eec359e8ad7f24e23eaa0acca2777c79c7'
-  //'5cf24ad2470cc60b85b23a14a2d5b756c542904c9ae3061ac08760abb73c6c2f'
   const params = new URLSearchParams();
   params.append('app_id', appId);
   params.append('sentence', word);
@@ -25,43 +37,74 @@ async function convertWord(w) {
     body: params,
   });
   let result = await postResponse.json()
-  result = result['converted'].replace(/\s+/g,'').replace(/「/g,'').replace(/」/g,'');
+  result = result['converted'].replace(/[「」\s+]/g,'');
   if (ex) {
     for (let s of ex) {
-      result = result.replace('□',s)
+      result = result.replace('□', s)
     }
   }
   return result;
 }
 
 function downLoad() {
-  const word = document.getElementById('input').value.replace(/\n/g, '■');
-  let test = word.substring(word.indexOf('■') + 1);
-  test = test.replace(/■/g, '');
-  if (word.indexOf('■') == -1 || test == '') {
+  // 一行ずつ配列で取得
+  let wordArray = texterea.value.split('\n');
+  // 空文字のみの行を削除
+  wordArray = wordArray.filter((w) => w.trim());
+  // 要素の数をチェック
+  if (wordArray.length <= 1) {
     alert("二つ以上要素を追加してください。");
-    return;
+    return;    
   }
-  dbtn.disabled = true;
+  // apiを叩く回数を減らすため一列に(改行は⏎で表す)
+  let wordString = "";
+  for (let s of wordArray) {
+    wordString += s + '⏎';
+  }
+  wordString = wordString.slice(0, -1);
+  // 文字列が長すぎないかチェック
+  if(wordString.bytes() > 100000) {
+    alert("もっと短くしてください。");
+    return;    
+  }
   
-  const header = "title\tkeyword\tdescription\timage\n"
-  data = header;
-  convertWord(word).then(function (value) {
+  dbtn.disabled = true; // ボタンの無効化
+  
+  convertWord(wordString).then(function(value){
+    // 句読点と！？消す
     if(document.getElementById('chk1').checked) {
-      value = value.replace(/[！？、。!?]/g, '')
+      value = value.replace(/[！？、。!?]/g, '');
     }
+    // 空白文字の管理
     if(document.getElementById('chk2').checked) {
-      value = value.toLowerCase()
+      value = value.replace(/◇/g,'');
+    } else {
+      value = value.replace(/◇/g,' ');
     }
-    value = value.replace(/◇/g,' ')
-    let arr1 = word.split('■');
-    let arr2 = value.split('■');
-    arr1 = arr1.filter((w) => w !== '');
-    arr2 = arr2.filter((w) => w !== '');
-    for (let i = 0; i < arr1.length; i++) {
-      data += arr1[i] + '\t';
-      data += arr2[i] + '\n';
+    // 大文字を小文字に
+    if(document.getElementById('chk4').checked) {
+      value = value.toLowerCase();
     }
+    // 一行ずつに戻す
+    let convertedArray = value.split('⏎');
+    // tsvファイルのためのデータをつくる
+    const header = "title\tkeyword\tdescription\timage\n";
+    let data = header;
+    if(document.getElementById('chk3').checked) {
+      for (let i = 0; i < wordArray.length; i++) {
+        const n = i == wordArray.length - 1 ? 0 : i + 1
+        data += wordArray[i] + '\t';
+        data += convertedArray[i] + '\t';
+        data += '▶' + wordArray[n] + '\n';
+      }
+    } else {
+      for (let i = 0; i < wordArray.length; i++) {
+        data += wordArray[i] + '\t';
+        data += convertedArray[i] + '\n';
+      }
+    }
+    console.log(data)
+    // tsvファイルの作成とダウンロード
     const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
     const blob = new Blob([bom, data], { type: "text/tsv" });
     const objectUrl = URL.createObjectURL(blob);
@@ -71,14 +114,16 @@ function downLoad() {
     downloadLink.href = objectUrl;
     downloadLink.click();
     downloadLink.remove();
-
-    dbtn.disabled = false
+    
+    dbtn.disabled = false; // ボタンの有効化
   }).catch((err) =>{
+    console.log(err);
     alert("APIが制限に達したようです。時間をおいてから試してください。");
     return;
   })
 }
 
+//テキストエリアを空に
 function cleartxt() {
-  document.getElementById('input').value = ''
+  texterea.value = '';
 }
