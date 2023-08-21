@@ -92,10 +92,13 @@ function downLoad() {
     let data = header;
     if(document.getElementById('chk3').checked) {
       for (let i = 0; i < wordArray.length; i++) {
-        const n = i == wordArray.length - 1 ? 0 : i + 1
         data += wordArray[i] + '\t';
         data += convertedArray[i] + '\t';
-        data += '▶' + wordArray[n] + '\n';
+        if (i == wordArray.length - 1) {
+          data += '↺' + wordArray[0] + '\n';
+        } else {
+          data += '▶' + wordArray[i+1] + '\n';
+        }
       }
     } else {
       for (let i = 0; i < wordArray.length; i++) {
